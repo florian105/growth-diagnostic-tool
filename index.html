@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Growth Architecture Diagnostic - Florian Nègre</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function DiagnosticTool() {
+            const [currentStep, setCurrentStep] = useState('intro');
+            const [answers, setAnswers] = useState({});
+            const [aiAnalysis, setAiAnalysis] = useState(null);
+            const [isAnalyzing, setIsAnalyzing] = useState(false);
+            const [userEmail, setUserEmail] = useState('');
+            const [acceptMarketing, setAcceptMarketing] = useState(false);
+            const [emailError, setEmailError] = useState('');
+
+            const questions = [
+                // Section A: DATA & SYSTEMS
+                {
+                    id: 1,
+                    section: 'A',
+                    sectionName: 'Data & Systems',
+                    text: 'Nos données marketing, sales et product sont unifiées dans un système unique'
+                },
+                {
+                    id: 2,
+                    section: 'A',
+                    sectionName: 'Data & Systems',
+                    text: 'Nous avons une gouvernance des données claire (propriétaire, qualité, sécurité)'
+                },
+                {
+                    id: 3,
+                    section: 'A',
+                    sectionName: 'Data & Systems',
+                    text: 'Nos systèmes sont conformes RGPD et préparés pour l\'AI Act'
+                },
+                {
+                    id: 4,
+                    section: 'A',
+                    sectionName: 'Data & Systems',
+                    text: 'Nous pouvons tracer le parcours complet d\'un lead de la première visite à la vente'
+                },
+                {
+                    id: 5,
+                    section: 'A',
+                    sectionName: 'Data & Systems',
+                    text: 'Nos outils marketing/sales sont intégrés et se parlent entre eux'
+                },
+                // Section B: STRATEGY & ALIGNMENT
+                {
+                    id: 6,
+                    section: 'B',
+                    sectionName: 'Strategy & Alignment',
+                    text: 'Nous avons une stratégie de croissance documentée et partagée entre équipes'
+                },
+                {
+                    id: 7,
+                    section: 'B',
+                    sectionName: 'Strategy & Alignment',
+                    text: 'Marketing, Sales et Product sont alignés sur les mêmes objectifs de croissance'
+                },
+                {
+                    id: 8,
+                    section: 'B',
+                    sectionName: 'Strategy & Alignment',
+                    text: 'Nous avons des OKRs/KPIs clairs pour mesurer la performance de croissance'
+                },
+                {
+                    id: 9,
+                    section: 'B',
+                    sectionName: 'Strategy & Alignment',
+                    text: 'Nous révisons notre stratégie de croissance au moins trimestriellement'
+                },
+                {
+                    id: 10,
+                    section: 'B',
+                    sectionName: 'Strategy & Alignment',
+                    text: 'Notre CEO/Board comprend clairement comment le marketing contribue à la croissance'
+                },
+                // Section C: AI & AUTOMATION
+                {
+                    id: 11,
+                    section: 'C',
+                    sectionName: 'AI & Automation',
+                    text: 'Nous utilisons l\'IA pour améliorer notre lead scoring ou qualification'
+                },
+                {
+                    id: 12,
+                    section: 'C',
+                    sectionName: 'AI & Automation',
+                    text: 'Nos processus d\'automation marketing sont documentés et optimisés'
+                },
+                {
+                    id: 13,
+                    section: 'C',
+                    sectionName: 'AI & Automation',
+                    text: 'Nous avons des cadres de gouvernance pour l\'utilisation de l\'IA (éthique, compliance)'
+                },
+                {
+                    id: 14,
+                    section: 'C',
+                    sectionName: 'AI & Automation',
+                    text: 'Nous mesurons le ROI de nos outils IA et automation'
+                },
+                {
+                    id: 15,
+                    section: 'C',
+                    sectionName: 'AI & Automation',
+                    text: 'Nos équipes sont formées à l\'utilisation stratégique de l\'IA (pas juste les outils)'
+                },
+                // Section D: EXECUTION & OPTIMIZATION
+                {
+                    id: 16,
+                    section: 'D',
+                    sectionName: 'Execution & Optimization',
+                    text: 'Nous avons un processus structuré pour tester et optimiser nos campagnes'
+                },
+                {
+                    id: 17,
+                    section: 'D',
+                    sectionName: 'Execution & Optimization',
+                    text: 'Nous analysons régulièrement les points de friction dans notre funnel de conversion'
+                },
+                {
+                    id: 18,
+                    section: 'D',
+                    sectionName: 'Execution & Optimization',
+                    text: 'Nos rapports de performance sont automatisés et accessibles en temps réel'
+                },
+                {
+                    id: 19,
+                    section: 'D',
+                    sectionName: 'Execution & Optimization',
+                    text: 'Nous avons une roadmap de croissance documentée sur les 6-12 prochains mois'
+                },
+                {
+                    id: 20,
+                    section: 'D',
+                    sectionName: 'Execution & Optimization',
+                    text: 'Nos investissements marketing/sales sont basés sur des données, pas des intuitions'
+                }
+            ];
+
+            const calculateScores = () => {
+                const sectionScores = {
+                    A: 0,
+                    B: 0,
+                    C: 0,
+                    D: 0
+                };
+
+                questions.forEach(q => {
+                    const answer = answers[q.id] || 0;
+                    sectionScores[q.section] += answer;
+                });
+
+                const totalScore = Object.values(sectionScores).reduce((a, b) => a + b, 0);
+
+                return { sectionScores, totalScore };
+            };
+
+            const handleAnswer = (questionId, value) => {
+                setAnswers(prev => {
+                    const newAnswers = {
+                        ...prev,
+                        [questionId]: value
+                    };
+                    
+                    return newAnswers;
+                });
+            };
+
+            const allQuestionsAnswered = () => {
+                return questions.every(q => answers[q.id] !== undefined);
+            };
+
+            useEffect(() => {
+                if (currentStep === 'questions') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                if (currentStep === 'results') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }, [currentStep]);
+
+            const getAIAnalysis = async () => {
+                setIsAnalyzing(true);
+                setCurrentStep('loading');
+
+                const { sectionScores, totalScore } = calculateScores();
+
+                try {
+                    const response = await fetch("https://api.anthropic.com/v1/messages", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "claude-sonnet-4-20250514",
+                            max_tokens: 2000,
+                            messages: [{
+                                role: "user",
+                                content: `Tu es Florian Nègre, Fractional Chief Growth Officer spécialisé en Architecture de Croissance. 
+
+Un client vient de compléter ton diagnostic de Growth Architecture. Voici ses résultats :
+
+SCORE TOTAL : ${totalScore}/100
+
+SCORES PAR SECTION :
+- Section A (Data & Systems) : ${sectionScores.A}/25
+- Section B (Strategy & Alignment) : ${sectionScores.B}/25
+- Section C (AI & Automation) : ${sectionScores.C}/25
+- Section D (Execution & Optimization) : ${sectionScores.D}/25
+
+DÉTAIL DES RÉPONSES (échelle 1-5) :
+${questions.map(q => `Q${q.id} (${q.section}): ${answers[q.id]}/5 - ${q.text}`).join('\n')}
+
+Génère une analyse personnalisée et actionnable en français avec :
+
+1. Un diagnostic du niveau de maturité (Émergent/En Développement/Mature/Avancé)
+2. Une analyse de chaque section avec insights spécifiques basés sur les réponses
+3. Les 3 priorités principales pour améliorer leur Architecture de Croissance
+4. Des recommandations concrètes et actionnables
+
+Ton analyse doit être empathique, professionnelle, et montrer ta profonde expertise. Utilise un ton consultant senior, pas de flatterie excessive. Sois direct et apporte une vraie valeur.
+
+Format ta réponse en HTML avec des balises <h3>, <p>, <ul>, <li>, <strong> pour une belle présentation.`
+                            }]
+                        })
+                    });
+
+                    const data = await response.json();
+                    const analysis = data.content[0].text;
+
+                    setAiAnalysis(analysis);
+                    setCurrentStep('results');
+                } catch (error) {
+                    console.error('Error getting AI analysis:', error);
+                    setCurrentStep('results');
+                } finally {
+                    setIsAnalyzing(false);
+                }
+            };
+
+            useEffect(() => {
+                if (currentStep === 'results') {
+                    const ctx = document.getElementById('radarChart');
+                    if (ctx) {
+                        const { sectionScores } = calculateScores();
+                        new Chart(ctx, {
+                            type: 'radar',
+                            data: {
+                                labels: [
+                                    'Data & Systems',
+                                    'Strategy & Alignment',
+                                    'AI & Automation',
+                                    'Execution & Optimization'
+                                ],
+                                datasets: [{
+                                    label: 'Votre Score',
+                                    data: [
+                                        (sectionScores.A / 25) * 100,
+                                        (sectionScores.B / 25) * 100,
+                                        (sectionScores.C / 25) * 100,
+                                        (sectionScores.D / 25) * 100
+                                    ],
+                                    fill: true,
+                                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                                    borderColor: 'rgb(59, 130, 246)',
+                                    pointBackgroundColor: 'rgb(59, 130, 246)',
+                                    pointBorderColor: '#fff',
+                                    pointHoverBackgroundColor: '#fff',
+                                    pointHoverBorderColor: 'rgb(59, 130, 246)'
+                                }]
+                            },
+                            options: {
+                                scales: {
+                                    r: {
+                                        min: 0,
+                                        max: 100,
+                                        ticks: {
+                                            stepSize: 25
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            }, [currentStep]);
+
+            const getScoreColor = (score) => {
+                if (score <= 40) return 'text-red-600';
+                if (score <= 65) return 'text-orange-600';
+                if (score <= 85) return 'text-yellow-600';
+                return 'text-green-600';
+            };
+
+            const getScoreLevel = (score) => {
+                if (score <= 40) return { level: '🟥 ÉMERGENT', color: 'bg-red-100 border-red-500' };
+                if (score <= 65) return { level: '🟠 EN DÉVELOPPEMENT', color: 'bg-orange-100 border-orange-500' };
+                if (score <= 85) return { level: '🟡 MATURE', color: 'bg-yellow-100 border-yellow-500' };
+                return { level: '🟢 AVANCÉ', color: 'bg-green-100 border-green-500' };
+            };
+
+            // INTRO SCREEN
+            if (currentStep === 'intro') {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+                        <div className="max-w-3xl mx-auto">
+                            <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12">
+                                <div className="text-center mb-8">
+                                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                                        Growth Architecture Diagnostic
+                                    </h1>
+                                    <p className="text-xl text-gray-600">
+                                        Évaluez la maturité de vos systèmes de croissance en 20 questions
+                                    </p>
+                                </div>
+
+                                <div className="space-y-6 mb-8">
+                                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+                                        <h3 className="font-semibold text-gray-900 mb-2">Comment utiliser ce diagnostic :</h3>
+                                        <ol className="list-decimal list-inside space-y-2 text-gray-700">
+                                            <li>Répondez aux 20 questions honnêtement</li>
+                                            <li>Votre score sera calculé automatiquement</li>
+                                            <li>Recevez une analyse personnalisée par IA</li>
+                                        </ol>
+                                    </div>
+
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div className="bg-gray-50 p-4 rounded-lg">
+                                            <div className="text-3xl mb-2">⏱️</div>
+                                            <div className="font-semibold text-gray-900">Temps requis</div>
+                                            <div className="text-gray-600">10-15 minutes</div>
+                                        </div>
+                                        <div className="bg-gray-50 p-4 rounded-lg">
+                                            <div className="text-3xl mb-2">🔒</div>
+                                            <div className="font-semibold text-gray-900">Confidentialité</div>
+                                            <div className="text-gray-600">Gratuit et privé</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <h3 className="font-semibold text-gray-900 mb-2">Les 4 sections évaluées :</h3>
+                                        <ul className="space-y-1 text-gray-700">
+                                            <li>📊 <strong>Data & Systems</strong> - Unification et gouvernance des données</li>
+                                            <li>🎯 <strong>Strategy & Alignment</strong> - Cohésion stratégique inter-équipes</li>
+                                            <li>🤖 <strong>AI & Automation</strong> - Maturité technologique</li>
+                                            <li>⚡ <strong>Execution & Optimization</strong> - Culture d'amélioration continue</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => setCurrentStep('questions')}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition duration-200 shadow-lg hover:shadow-xl"
+                                >
+                                    Commencer le diagnostic →
+                                </button>
+
+                                <div className="mt-8 text-center text-sm text-gray-600">
+                                    <p>Créé par <strong>Florian Nègre</strong> | Fractional Chief Growth Officer</p>
+                                    <a href="https://www.negreflorian.com" target="_blank" className="text-blue-600 hover:underline">
+                                        www.negreflorian.com
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // QUESTIONS SCREEN
+            if (currentStep === 'questions') {
+                const currentSection = questions.find(q => !answers[q.id])?.section || 'D';
+                const sectionQuestions = questions.filter(q => q.section === currentSection);
+                const progress = (Object.keys(answers).length / questions.length) * 100;
+
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12">
+                                <div className="mb-8">
+                                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                                        <span>Progression</span>
+                                        <span>{Object.keys(answers).length} / 20</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-3">
+                                        <div
+                                            className="bg-blue-600 h-3 rounded-full transition-all duration-300"
+                                            style={{ width: `${progress}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+
+                                <div className="mb-8">
+                                    <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                                        Section {currentSection}: {sectionQuestions[0]?.sectionName}
+                                    </h2>
+                                    <p className="text-gray-600">
+                                        Répondez honnêtement à chaque question (échelle 1-5)
+                                    </p>
+                                    <p className="text-sm text-gray-500 mt-2">
+                                        1 = Pas du tout | 5 = Complètement
+                                    </p>
+                                </div>
+
+                                <div className="space-y-8">
+                                    {sectionQuestions.map((question) => (
+                                        <div key={question.id} className="border-b border-gray-200 pb-6">
+                                            <div className="mb-4">
+                                                <span className="text-blue-600 font-semibold">Question {question.id}</span>
+                                                <p className="text-lg text-gray-900 mt-2">{question.text}</p>
+                                            </div>
+                                            <div className="flex flex-wrap gap-3">
+                                                {[1, 2, 3, 4, 5].map((value) => (
+                                                    <button
+                                                        key={value}
+                                                        onClick={() => handleAnswer(question.id, value)}
+                                                        className={`flex-1 min-w-[60px] py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
+                                                            answers[question.id] === value
+                                                                ? 'bg-blue-600 text-white shadow-lg scale-105'
+                                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                        }`}
+                                                    >
+                                                        {value}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-8 flex justify-between items-center">
+                                    <button
+                                        onClick={() => {
+                                            if (currentSection === 'A') {
+                                                setCurrentStep('intro');
+                                            }
+                                        }}
+                                        className="text-gray-600 hover:text-gray-900 font-semibold"
+                                    >
+                                        ← Retour
+                                    </button>
+
+                                    {allQuestionsAnswered() && (
+                                        <button
+                                            onClick={() => {
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                setCurrentStep('email');
+                                            }}
+                                            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition duration-200 shadow-lg hover:shadow-xl"
+                                        >
+                                            Voir mes résultats →
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // EMAIL COLLECTION SCREEN
+            if (currentStep === 'email') {
+                const { totalScore } = calculateScores();
+                
+                const handleEmailSubmit = async (e) => {
+                    e.preventDefault();
+                    
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!userEmail || !emailRegex.test(userEmail)) {
+                        setEmailError('Veuillez entrer une adresse email valide');
+                        return;
+                    }
+                    
+                    setEmailError('');
+                    await sendResultsToBackend();
+                    await getAIAnalysis();
+                };
+                
+                const sendResultsToBackend = async () => {
+                    const { sectionScores, totalScore } = calculateScores();
+                    
+                    const resultData = {
+                        email: userEmail,
+                        acceptMarketing: acceptMarketing,
+                        totalScore: totalScore,
+                        sectionScores: sectionScores,
+                        answers: answers
+                    };
+                    
+                    try {
+                        const response = await fetch('https://extraordinary-cranachan-f76f81.netlify.app/.netlify/functions/submit-diagnostic', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(resultData)
+                        });
+                        
+                        if (response.ok) {
+                            console.log('Données envoyées avec succès à Airtable');
+                        } else {
+                            console.error('Erreur lors de l\'envoi:', response.status);
+                        }
+                    } catch (error) {
+                        console.error('Erreur envoi données:', error);
+                    }
+                };
+
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 flex items-center justify-center">
+                        <div className="max-w-2xl mx-auto">
+                            <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12">
+                                <div className="text-center mb-8">
+                                    <div className="text-6xl mb-4">🎯</div>
+                                    <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                                        Votre score : {totalScore}/100
+                                    </h2>
+                                    <p className="text-lg text-gray-700">
+                                        Bravo ! Vous avez complété le diagnostic.
+                                    </p>
+                                    <p className="text-gray-600 mt-2">
+                                        Pour accéder à votre analyse détaillée (forces, faiblesses, recommandations personnalisées), entrez votre email :
+                                    </p>
+                                </div>
+
+                                <form onSubmit={handleEmailSubmit} className="space-y-6">
+                                    <div>
+                                        <input
+                                            type="email"
+                                            value={userEmail}
+                                            onChange={(e) => setUserEmail(e.target.value)}
+                                            placeholder="votre@email.com"
+                                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none text-lg"
+                                            required
+                                        />
+                                        {emailError && (
+                                            <p className="text-red-600 text-sm mt-2">{emailError}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <label className="flex items-start space-x-3 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                checked={acceptMarketing}
+                                                onChange={(e) => setAcceptMarketing(e.target.checked)}
+                                                className="mt-1 w-5 h-5 text-blue-600 rounded"
+                                            />
+                                            <span className="text-gray-700">
+                                                J'accepte de recevoir des conseils stratégiques occasionnels sur l'architecture de croissance (optionnel)
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition duration-200 shadow-lg hover:shadow-xl"
+                                    >
+                                        → Voir mon analyse complète
+                                    </button>
+                                </form>
+
+                                <div className="mt-8 border-t border-gray-200 pt-6">
+                                    <h3 className="font-semibold text-gray-900 mb-4">
+                                        Pourquoi nous demandons votre email :
+                                    </h3>
+                                    <ul className="space-y-2 text-gray-700">
+                                        <li className="flex items-start">
+                                            <span className="text-green-600 mr-2">✓</span>
+                                            <span>Pour vous envoyer votre score détaillé par email</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <span className="text-green-600 mr-2">✓</span>
+                                            <span>Pour vous proposer un appel stratégique gratuit de 15 min si votre score indique des opportunités d'amélioration</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <span className="text-green-600 mr-2">✓</span>
+                                            <span>Nous ne partageons JAMAIS vos données avec des tiers (conformité RGPD)</span>
+                                        </li>
+                                    </ul>
+                                    <div className="mt-4 text-center">
+                                        <a 
+                                            href="https://www.negreflorian.com/privacy-policy" 
+                                            target="_blank"
+                                            className="text-sm text-gray-500 hover:text-gray-700 underline"
+                                        >
+                                            → Politique de confidentialité
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // LOADING SCREEN
+            if (currentStep === 'loading') {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
+                        <div className="bg-white rounded-2xl shadow-2xl p-12 text-center max-w-md">
+                            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-6"></div>
+                            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                                Analyse en cours...
+                            </h2>
+                            <p className="text-gray-600">
+                                L'IA analyse vos réponses et génère votre diagnostic personnalisé.
+                            </p>
+                        </div>
+                    </div>
+                );
+            }
+
+            // RESULTS SCREEN
+            if (currentStep === 'results') {
+                const { sectionScores, totalScore } = calculateScores();
+                const scoreLevel = getScoreLevel(totalScore);
+
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4">
+                        <div className="max-w-5xl mx-auto">
+                            <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-12">
+                                <div className="text-center mb-8">
+                                    <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                                        Vos Résultats
+                                    </h1>
+                                    <div className={`inline-block ${scoreLevel.color} border-l-4 px-6 py-4 rounded-lg`}>
+                                        <div className="text-sm text-gray-600 mb-1">Score Total</div>
+                                        <div className={`text-5xl font-bold ${getScoreColor(totalScore)}`}>
+                                            {totalScore} / 100
+                                        </div>
+                                        <div className="text-xl font-semibold text-gray-900 mt-2">
+                                            {scoreLevel.level}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mb-12">
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+                                        Visualisation par section
+                                    </h2>
+                                    <div className="max-w-lg mx-auto">
+                                        <canvas id="radarChart"></canvas>
+                                    </div>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6 mb-12">
+                                    <div className="bg-gray-50 p-6 rounded-lg">
+                                        <h3 className="font-semibold text-gray-900 mb-2">📊 Data & Systems</h3>
+                                        <div className="text-3xl font-bold text-blue-600">{sectionScores.A} / 25</div>
+                                    </div>
+                                    <div className="bg-gray-50 p-6 rounded-lg">
+                                        <h3 className="font-semibold text-gray-900 mb-2">🎯 Strategy & Alignment</h3>
+                                        <div className="text-3xl font-bold text-blue-600">{sectionScores.B} / 25</div>
+                                    </div>
+                                    <div className="bg-gray-50 p-6 rounded-lg">
+                                        <h3 className="font-semibold text-gray-900 mb-2">🤖 AI & Automation</h3>
+                                        <div className="text-3xl font-bold text-blue-600">{sectionScores.C} / 25</div>
+                                    </div>
+                                    <div className="bg-gray-50 p-6 rounded-lg">
+                                        <h3 className="font-semibold text-gray-900 mb-2">⚡ Execution & Optimization</h3>
+                                        <div className="text-3xl font-bold text-blue-600">{sectionScores.D} / 25</div>
+                                    </div>
+                                </div>
+
+                                <div className="mb-8">
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Interprétation</h2>
+                                    {totalScore <= 40 && (
+                                        <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg">
+                                            <div className="font-bold text-xl text-red-800 mb-3">🟥 NIVEAU : ÉMERGENT</div>
+                                            <p className="text-gray-800 mb-4">
+                                                Votre infrastructure de croissance est fragmentée. Vous avez besoin d'une refonte architecturale complète.
+                                            </p>
+                                            <div className="mb-4">
+                                                <div className="font-semibold text-gray-900 mb-2">PRIORITÉS :</div>
+                                                <ol className="list-decimal list-inside space-y-1 text-gray-800">
+                                                    <li>Unifier vos données (CRM/CDP integration)</li>
+                                                    <li>Documenter une stratégie de croissance</li>
+                                                    <li>Établir une gouvernance des données basique</li>
+                                                </ol>
+                                            </div>
+                                            <div className="bg-red-100 px-4 py-2 rounded font-semibold text-red-900">
+                                                RECOMMANDATION : Service AMPLIFY (3-6 mois)
+                                            </div>
+                                        </div>
+                                    )}
+                                    {totalScore >= 41 && totalScore <= 65 && (
+                                        <div className="bg-orange-50 border-l-4 border-orange-500 p-6 rounded-lg">
+                                            <div className="font-bold text-xl text-orange-800 mb-3">🟠 NIVEAU : EN DÉVELOPPEMENT</div>
+                                            <p className="text-gray-800 mb-4">
+                                                Vous avez des fondations, mais des silos persistent. Optimisation et alignement sont nécessaires.
+                                            </p>
+                                            <div className="mb-4">
+                                                <div className="font-semibold text-gray-900 mb-2">PRIORITÉS :</div>
+                                                <ol className="list-decimal list-inside space-y-1 text-gray-800">
+                                                    <li>Aligner Marketing/Sales/Product sur objectifs communs</li>
+                                                    <li>Implémenter automation et AI de manière structurée</li>
+                                                    <li>Créer des dashboards de performance unifiés</li>
+                                                </ol>
+                                            </div>
+                                            <div className="bg-orange-100 px-4 py-2 rounded font-semibold text-orange-900">
+                                                RECOMMANDATION : Service AMPLIFY ou ACCELERATE selon besoins
+                                            </div>
+                                        </div>
+                                    )}
+                                    {totalScore >= 66 && totalScore <= 85 && (
+                                        <div className="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg">
+                                            <div className="font-bold text-xl text-yellow-800 mb-3">🟡 NIVEAU : MATURE</div>
+                                            <p className="text-gray-800 mb-4">
+                                                Vos systèmes fonctionnent bien. Quelques optimisations stratégiques peuvent débloquer la prochaine phase de croissance.
+                                            </p>
+                                            <div className="mb-4">
+                                                <div className="font-semibold text-gray-900 mb-2">PRIORITÉS :</div>
+                                                <ol className="list-decimal list-inside space-y-1 text-gray-800">
+                                                    <li>Optimiser les points de friction identifiés</li>
+                                                    <li>Préparer compliance AI Act</li>
+                                                    <li>Former équipes sur utilisation stratégique de l'IA</li>
+                                                </ol>
+                                            </div>
+                                            <div className="bg-yellow-100 px-4 py-2 rounded font-semibold text-yellow-900">
+                                                RECOMMANDATION : Service ANALYZE + Advisory ponctuel
+                                            </div>
+                                        </div>
+                                    )}
+                                    {totalScore >= 86 && (
+                                        <div className="bg-green-50 border-l-4 border-green-500 p-6 rounded-lg">
+                                            <div className="font-bold text-xl text-green-800 mb-3">🟢 NIVEAU : AVANCÉ</div>
+                                            <p className="text-gray-800 mb-4">
+                                                Félicitations ! Votre architecture de croissance est mature. Vous êtes prêt pour de l'innovation et de l'expansion.
+                                            </p>
+                                            <div className="mb-4">
+                                                <div className="font-semibold text-gray-900 mb-2">PRIORITÉS :</div>
+                                                <ol className="list-decimal list-inside space-y-1 text-gray-800">
+                                                    <li>Expansion géographique ou nouveau segment</li>
+                                                    <li>Innovation produit basée sur insights data</li>
+                                                    <li>Optimisation continue et mentoring équipes</li>
+                                                </ol>
+                                            </div>
+                                            <div className="bg-green-100 px-4 py-2 rounded font-semibold text-green-900">
+                                                RECOMMANDATION : Service d'Advisory Board-level ou mentoring exécutif
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="mb-8">
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Analyse par section</h2>
+                                    <div className="grid md:grid-cols-2 gap-6">
+                                        <div className="border border-gray-200 p-6 rounded-lg bg-yellow-50">
+                                            <h3 className="font-bold text-lg text-gray-900 mb-3">
+                                                Section A (Data & Systems) : {sectionScores.A} / 25
+                                            </h3>
+                                            {sectionScores.A < 15 && (
+                                                <p className="text-gray-800 bg-red-100 p-3 rounded">
+                                                    [Score &lt;15] Vos données sont fragmentées. Priorité #1 : unification.
+                                                </p>
+                                            )}
+                                            {sectionScores.A >= 15 && sectionScores.A <= 20 && (
+                                                <p className="text-gray-800 bg-blue-100 p-3 rounded">
+                                                    [Score 15-20] Fondations correctes, mais gouvernance à renforcer.
+                                                </p>
+                                            )}
+                                            {sectionScores.A > 20 && (
+                                                <p className="text-gray-800 bg-green-100 p-3 rounded">
+                                                    [Score &gt;20] Excellente infrastructure data.
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="border border-gray-200 p-6 rounded-lg bg-yellow-50">
+                                            <h3 className="font-bold text-lg text-gray-900 mb-3">
+                                                Section C (AI & Automation) : {sectionScores.C} / 25
+                                            </h3>
+                                            {sectionScores.C < 15 && (
+                                                <p className="text-gray-800 bg-red-100 p-3 rounded">
+                                                    [Score &lt;15] Sous-utilisation de l'IA. Opportunité majeure d'amélioration.
+                                                </p>
+                                            )}
+                                            {sectionScores.C >= 15 && sectionScores.C <= 20 && (
+                                                <p className="text-gray-800 bg-blue-100 p-3 rounded">
+                                                    [Score 15-20] IA présente mais sans gouvernance claire.
+                                                </p>
+                                            )}
+                                            {sectionScores.C > 20 && (
+                                                <p className="text-gray-800 bg-green-100 p-3 rounded">
+                                                    [Score &gt;20] Utilisation mature et responsable de l'IA.
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="border border-gray-200 p-6 rounded-lg bg-yellow-50">
+                                            <h3 className="font-bold text-lg text-gray-900 mb-3">
+                                                Section B (Strategy & Alignment) : {sectionScores.B} / 25
+                                            </h3>
+                                            {sectionScores.B < 15 && (
+                                                <p className="text-gray-800 bg-red-100 p-3 rounded">
+                                                    [Score &lt;15] Manque de stratégie documentée et d'alignement d'équipes.
+                                                </p>
+                                            )}
+                                            {sectionScores.B >= 15 && sectionScores.B <= 20 && (
+                                                <p className="text-gray-800 bg-blue-100 p-3 rounded">
+                                                    [Score 15-20] Stratégie présente mais exécution silotée.
+                                                </p>
+                                            )}
+                                            {sectionScores.B > 20 && (
+                                                <p className="text-gray-800 bg-green-100 p-3 rounded">
+                                                    [Score &gt;20] Excellente cohésion stratégique.
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="border border-gray-200 p-6 rounded-lg bg-yellow-50">
+                                            <h3 className="font-bold text-lg text-gray-900 mb-3">
+                                                Section D (Execution & Optimization) : {sectionScores.D} / 25
+                                            </h3>
+                                            {sectionScores.D < 15 && (
+                                                <p className="text-gray-800 bg-red-100 p-3 rounded">
+                                                    [Score &lt;15] Processus d'optimisation inexistants ou ad-hoc.
+                                                </p>
+                                            )}
+                                            {sectionScores.D >= 15 && sectionScores.D <= 20 && (
+                                                <p className="text-gray-800 bg-blue-100 p-3 rounded">
+                                                    [Score 15-20] Optimisation présente mais pas systématique.
+                                                </p>
+                                            )}
+                                            {sectionScores.D > 20 && (
+                                                <p className="text-gray-800 bg-green-100 p-3 rounded">
+                                                    [Score &gt;20] Culture d'amélioration continue bien établie.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {aiAnalysis && (
+                                    <div className="mb-8 bg-gradient-to-br from-blue-50 to-indigo-50 p-8 rounded-lg border border-blue-200">
+                                        <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+                                            <span className="text-3xl mr-3">🤖</span>
+                                            Analyse personnalisée par IA
+                                        </h2>
+                                        <div 
+                                            className="prose prose-lg max-w-none"
+                                            dangerouslySetInnerHTML={{ __html: aiAnalysis }}
+                                        />
+                                    </div>
+                                )}
+
+                                <div className="bg-gray-900 text-white p-8 rounded-lg">
+                                    <h2 className="text-2xl font-bold mb-4">Prochaines étapes</h2>
+                                    <p className="mb-6 text-gray-300">
+                                        Vous voulez aller plus loin ?
+                                    </p>
+                                    <div className="space-y-4">
+                                        <a 
+                                            href="https://www.negreflorian.com/5-erreurs-de-systemes-de%20revenus%20que-font-les-entreprises-b2b-avec-l-ia" 
+                                            target="_blank"
+                                            className="block bg-green-600 hover:bg-green-700 text-center text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                                        >
+                                            📖 Lire le guide "5 erreurs de systèmes de croissance"
+                                        </a>
+                                        <a 
+                                            href="https://tidycal.com/negreflorian/15minute-m22dr9n" 
+                                            target="_blank"
+                                            className="block bg-purple-600 hover:bg-purple-700 text-center text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                                        >
+                                            📅 Bookez un appel stratégique de 15 minutes
+                                        </a>
+                                        <a 
+                                            href="https://www.negreflorian.com/grille-de-prix-packs" 
+                                            target="_blank"
+                                            className="block bg-cyan-600 hover:bg-cyan-700 text-center text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                                        >
+                                            💼 Découvrez les packages de services
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 pt-6 border-t border-gray-200 text-center text-sm text-gray-600">
+                                    <p className="mb-1">Créé par <strong>Florian Nègre</strong> | Fractional Chief Growth Officer</p>
+                                    <p>
+                                        <a href="https://www.negreflorian.com" target="_blank" className="text-blue-600 hover:underline">
+                                            www.negreflorian.com
+                                        </a>
+                                        {' | '}
+                                        <a href="mailto:florian@negreflorian.com" className="text-blue-600 hover:underline">
+                                            florian@negreflorian.com
+                                        </a>
+                                    </p>
+                                </div>
+
+                                <div className="mt-6 text-center">
+                                    <button
+                                        onClick={() => {
+                                            setCurrentStep('intro');
+                                            setAnswers({});
+                                            setAiAnalysis(null);
+                                        }}
+                                        className="text-gray-600 hover:text-gray-900 font-semibold"
+                                    >
+                                        ← Recommencer le diagnostic
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return null;
+        }
+
+        ReactDOM.render(<DiagnosticTool />, document.getElementById('root'));
+    </script>
+</body>
+</html>
