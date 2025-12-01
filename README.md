@@ -53,7 +53,6 @@ This tool helps me:
 4. **Generate qualified leads** for consulting services
 
 ## 📸 Screenshots
-![Diagnostic Tool Interface](Process - Architecture Diagnostic - negreflorian.com)
 
 ![Diagnostic Tool Interface](https://www.negreflorian.com/tool-revenue-architecture-diagnostic)
 
