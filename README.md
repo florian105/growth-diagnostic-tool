@@ -74,7 +74,7 @@ This tool helps me:
 - **Data security:** No third-party sharing, secure API calls
 - **Transparency:** Users understand why we collect their email
 
-## 🎓 What I Learned Building This
+## 🎓 What You Get Building This
 
 - **Prompt engineering** for Claude API to generate consistent, actionable analysis
 - **React state management** for multi-step forms
