@@ -1,4 +1,0 @@
-# Emphasize JavaScript
-*.html linguist-detectable=false
-*.js linguist-detectable=true
-*.css linguist-detectable=false
